@@ -1,0 +1,40 @@
+node
+  {
+
+ def mavenhome = tool name: "maven"
+
+stage('checkoutcode')
+{
+git branch: 'development', credentialsId: 'ff0ee5f5-0232-41b6-9a33-2cfe64aad5cb', url: 'https://github.com/sravas8496/maven-web-application.git'
+}
+
+stage('build')
+{
+ sh "${mavenhome}/bin/mvn clean package"
+}
+
+stage('excuete sonarqube report')
+{
+ sh "${mavenhome}/bin/mvn sonar:sonar"
+}
+
+stage('upload artifact into nexus')
+{
+ sh "${mavenhome}/bin/mvn deploy"
+}
+ stage('deploy into a container')
+  {
+sshagent(['815a3f13-6863-4593-a3da-4f3f0eb57119']) {
+    sh "scp -o stricthostkeychecking=no target/maven-web-application.war ec2-user@65.2.83.20:/opt/apache-tomcat-9.0.62/webapps/"
+ }
+
+   }
+stage('emailnotification')
+{
+emailext body: '''build -over
+regards
+sravan 
+
+8496837717''', subject: 'pipeline-sciptedway', to: 'sravan81790@gmail.com'
+}
+}
